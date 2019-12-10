@@ -14,4 +14,4 @@ Copyright (c) 2019, Parashara Shamaprasad and Tim Moore
 #### Acknowledgements
  
 Project based on the 
-[mBuild Recipe Cookiecutter]
+[mBuild Recipe Cookiecutter](https://github.com/rmatsum836/mbuild-cookiecutter)
