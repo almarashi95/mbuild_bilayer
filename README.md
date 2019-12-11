@@ -8,8 +8,6 @@ A bilayer building plugin for mBuild.
 
 Usage:
 `mbuild.recipes.Bilayer()`:
-
- Bilayer(lipids, ref_atoms, n_lipids_x=10, n_lipids_y=10, area_per_lipid=1.0, lipid_box=None, spacing_z=None, solvent=None, solvent_per_lipid=None, n_solvent=None, solvent_density=None, solvent_mass=None, tilt=0, random_seed=12345, mirror=True)
  
 Arguments:
 
