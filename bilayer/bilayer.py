@@ -41,6 +41,13 @@ class Bilayer(mb.Compound):
         Make top and bottom layers mirrors of each other.
     additives : list
         list of compounds
+    n_additives : list
+        Numbers of additve-molecules, MUST be same length as additves
+    additve_concentrations : list
+        in w/w% of each additive 
+    additve_mass : list
+        MUST be same length as additives 
+
     """
 
     def __init__(self, lipids, ref_atoms, n_lipids_x=10, n_lipids_y=10,
@@ -104,11 +111,11 @@ class Bilayer(mb.Compound):
             elif additive_concentration:
                 self.n_additives = []
                 all_solv = (self.n_solvent * solvent_mass)
-                all_add  = np.sum(np.multiply(self.n_additives*additives_mass))
-                
-                for i, conc in enumerate(additive_concentration):
-                    self.n_additives.append(*(conc/100)//additives_mass[i])
-                print('Concentrations are approximated {}'.format(   ))
+                for j, conc in enumerate(additive_concentration):
+                    self.n_additives.append(int((all_solv/100)*(conc)//additives_mass[j]))
+                all_add  = np.sum(np.multiply(self.n_additives,additives_mass))
+                total_mass = all_solv+all_add
+                print('Concentrations are approximated {}'.format(((np.sum(np.multiply(self.n_additives,additives_mass)/(total_mass/100))))))
             else:
                 raise ValueError("Requires either n_additives ",
                                     "or n_additive_concentration arguments")
@@ -138,8 +145,12 @@ class Bilayer(mb.Compound):
         self.lipid_components.translate_to([0, 0, 0])
 
         # Assemble solvent components
-        solvent_top = self.solvate(solvent_mass, solvent_density)
-        solvent_bot = mb.clone(solvent_top)
+        if additives:
+            solvent_top = self.solvate(solvent_mass, solvent_density, self.additives, self.n_additives)
+            solvent_bot = self.solvate(solvent_mass, solvent_density)
+        else:
+            solvent_top = self.solvate(solvent_mass, solvent_density)
+            solvent_bot = mb.clone(solvent_top)
         solvent_top.translate_to(
             [0, 0, self.spacing + 0.5 * solvent_top.boundingbox.lengths[2]]
             )
@@ -153,7 +164,7 @@ class Bilayer(mb.Compound):
         self.add(self.lipid_components)
         self.add(self.solvent_components)
 
-    def solvate(self, solvent_mass, solvent_density):
+    def solvate(self, solvent_mass, solvent_density,additves=None, n_additives=None):
         """Creates a single box of solvent molecules.
         The box size is based on the mass, density, and lipid area.
 
@@ -178,14 +189,33 @@ class Bilayer(mb.Compound):
         # Determine height of the solvent box
         solvent_z = solvent_volume / lipid_area
 
-        # Create Box object
-        solvent_box = mb.Box(mins=[0, 0, 0],
+        # Create Box object and
+        # Fill box with solvent
+        if additves:
+            solvent_box = mb.Box(mins=[0, 0, 0],
+                             maxs=[self.n_lipids_x * np.sqrt(self.apl),
+                                   self.n_lipids_y * np.sqrt(self.apl),
+                                   solvent_z * 0.55])            
+            compounds = [self.solvent]
+            # try:
+            compounds.extend(additves)
+            # except TypeError:
+            #     compounds.append(additves)
+            n_compounds=[int(self.n_solvent * 0.5)]
+            # try:
+            n_compounds.extend(n_additives)
+            # except TypeError:
+            #     n_compounds.append(n_additives)
+            # print(compounds,n_compounds)
+            solvent_compound = mb.fill_box(compound=compounds,
+                               n_compounds=n_compounds,
+                               box=solvent_box)
+        else:
+            solvent_box = mb.Box(mins=[0, 0, 0],
                              maxs=[self.n_lipids_x * np.sqrt(self.apl),
                                    self.n_lipids_y * np.sqrt(self.apl),
                                    solvent_z * 0.5])
-
-        # Fill box with solvent
-        solvent_compound = mb.fill_box(compound=self.solvent,
+            solvent_compound = mb.fill_box(compound=self.solvent,
                                n_compounds=int(self.n_solvent * 0.5),
                                box=solvent_box)
 
