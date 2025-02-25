@@ -39,13 +39,15 @@ class Bilayer(mb.Compound):
         Seed for random number generator for filling in lipids.
     mirror : bool, optional, default=True
         Make top and bottom layers mirrors of each other.
+    additives : list
+        list of compounds
     """
 
     def __init__(self, lipids, ref_atoms, n_lipids_x=10, n_lipids_y=10,
                  area_per_lipid=1.0, lipid_box=None, spacing_z=None,
                  solvent=None, solvent_per_lipid=None, n_solvent=None,
                  solvent_density=None, solvent_mass=None, tilt=0,
-                 random_seed=12345, mirror=True):
+                 random_seed=12345, mirror=True, additives=None, n_additives= None, additive_concentration=None, additives_mass=None):
 
         super(Bilayer, self).__init__()
 
@@ -93,7 +95,23 @@ class Bilayer(mb.Compound):
             else:
                 raise ValueError("Requires either n_solvent_per_lipid ",
                                     "or n_solvent arguments")
-
+                # check if additives present
+        # Additives paameters
+        if additives:
+            self.additives = additives
+            if n_additives:
+                self.n_additives = n_additives
+            elif additive_concentration:
+                self.n_additives = []
+                all_solv = (self.n_solvent * solvent_mass)
+                all_add  = np.sum(np.multiply(self.n_additives*additives_mass))
+                
+                for i, conc in enumerate(additive_concentration):
+                    self.n_additives.append(*(conc/100)//additives_mass[i])
+                print('Concentrations are approximated {}'.format(   ))
+            else:
+                raise ValueError("Requires either n_additives ",
+                                    "or n_additive_concentration arguments")
         # Other parameters
         self.random_seed = random_seed
         self.mirror = mirror
